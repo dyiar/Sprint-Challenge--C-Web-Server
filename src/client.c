@@ -49,6 +49,23 @@ urlinfo_t *parse_url(char *url)
   // IMPLEMENT ME! //
   ///////////////////
 
+  char *first_slash = strchr(hostname, "/");
+  *path = first_slash + 1;
+  for (int i = 0; i<strlen(hostname); i++) {
+    if (first_slash[i] == "/") {
+      first_slash[i] = "\0";
+      break;
+    }
+  }
+  char *first_colon = strchr(hostname, ":");
+  *port = first_colon + 1;
+  for (int i = 0; i<strlen(hostname); i++) {
+    if (first_colon[i] == ":"){
+      first_colon[i] = "\0";
+      break;
+    }
+  }
+
   return urlinfo;
 }
 
