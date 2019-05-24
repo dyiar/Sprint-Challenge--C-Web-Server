@@ -49,6 +49,35 @@ urlinfo_t *parse_url(char *url)
   // IMPLEMENT ME! //
   ///////////////////
 
+  char *first_slash = strchr(hostname, '/');
+  path = ++first_slash;
+  // for (int i = 0; i<strlen(hostname); i++) {
+  //   if (first_slash[i] == "/") {
+  //     first_slash[i] = "\0";
+  //     break;
+  //   }
+  // }
+  int slash = first_slash == NULL ? -1 : first_slash - hostname;
+  if(slash != -1) {
+    hostname[slash -1] = '\0'; 
+  }
+  char *first_colon = strchr(hostname, ':');
+  port = ++first_colon;
+  // for (int i = 0; i<strlen(hostname); i++) {
+  //   if (first_colon[i] == ":"){
+  //     first_colon[i] = "\0";
+  //     break;
+  //   }
+  // }
+  int colon = first_colon == NULL ? -1 : first_colon - hostname;
+  if(colon != -1) {
+    hostname[colon - 1] = '\0';
+  }
+
+  urlinfo->hostname = hostname;
+  urlinfo->path = path;
+  urlinfo->port = port;
+
   return urlinfo;
 }
 
@@ -71,8 +100,17 @@ int send_request(int fd, char *hostname, char *port, char *path)
   ///////////////////
   // IMPLEMENT ME! //
   ///////////////////
+  int request_length = sprintf(request, "GET /%s HTTP/1.1\n"
+                       "Host: %s:%s\n"
+                        "Connection: close\n"
+                        "\n", path, hostname, port);
 
-  return 0;
+  rv = send(fd, request, request_length, 0);
+
+  if (rv < 0) {
+    perror("send");
+  }
+  return rv;
 }
 
 int main(int argc, char *argv[])
@@ -96,6 +134,24 @@ int main(int argc, char *argv[])
   ///////////////////
   // IMPLEMENT ME! //
   ///////////////////
+
+  urlinfo_t *urlinfo = parse_url(argv[1]);
+  int socket = get_socket(urlinfo->hostname, urlinfo->port);
+
+  if (socket < 0) {
+    fprintf(stderr, "Error: socket");
+    exit(1);
+  }
+
+  send_request(socket, urlinfo->hostname, urlinfo->port, urlinfo->path);
+
+  while ((numbytes = recv(socket, buf, BUFSIZE -1, 0)) > 0) {
+    fprintf(stdout, "%s\n", buf);
+  }
+
+  free(urlinfo->hostname);
+  free(urlinfo);
+  close(socket);
 
   return 0;
 }
